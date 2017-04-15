@@ -1,5 +1,6 @@
 source("header.R")
 library(agricolae)
+library(hrbrthemes)
 source("./functions/sen_slope.R")
 source("./functions/trendMK.R")
 source("./functions/ggally_cor.R")
