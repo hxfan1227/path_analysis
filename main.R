@@ -1,6 +1,7 @@
 source("header.R")
 library(agricolae)
 library(hrbrthemes)
+library(cowplot)
 source("./functions/sen_slope.R")
 source("./functions/trendMK.R")
 source("./functions/ggally_cor.R")
@@ -192,6 +193,81 @@ test <- ggplot(elasticity.result.dt, aes(x = x, y = y, fill = model.pred)) +
 ggsave(filename = "./figures/test.wmf", test, width = 14, height = 14, units = 'in', family = "serif")
 ggsave(filename = "./figures/xjrb_au_cor.eps", xjrb.au.cor.plot, width = 14, height = 14, units = 'in', family = "serif", device = cairo_ps)
 ggsave(filename = "./figures/xjrb_au_cor.tiff", xjrb.au.cor.plot, width = 14, height = 14, units = 'in', family = "serif", dpi = 500, compression = "lzw+p")
+
+xjrb.year.dt <- xjrb.monthly.dt[, llply(.SD, sum), .SDcols = c("Prcp", "SM", "Runoff"), by = Year]
+xjrb.year.dt.melt <- melt(xjrb.year.dt, id.vars = 1)
+annual.trend.list <- dlply(xjrb.year.dt.melt, .(variable), .fun = function(x) trend.fun(data.table(x)))
+annual.trend.dt <- data.table(do.call(rbind.fill, annual.trend.list))
+
+
+summary(lm(data = xjrb.year.dt, Prcp~Year))
+p3 <- ggplot(xjrb.year.dt, aes(x = Year, y = Prcp))  +
+  geom_line() + geom_smooth(method = "lm", colour = "red", se = F) +
+  scale_x_continuous(breaks = seq(1970, 2010, by = 5)) +
+  theme_bw(base_size = 20, base_family = "serif") +
+  geom_text(x = 1985, y = 2500, label = eqn(-13622.10, 7.78, 0.04), parse = T, check_overlap = T, size = 6) +
+  labs(y = expression(paste("Annual Precipitation (mm/yr)"))) 
+p4 <- ggplot(annual.trend.dt[variable == "Prcp"],aes(x=start,y=end,fill=slope))+geom_tile()+
+  geom_contour(aes(z=abs(trend),colour=..level..),size=1,breaks=c(0,1.96,2.56),lineend = "round") +
+  scale_fill_gradient2(name = "mm/yr\n", low = muted("blue"), high = "red") +
+  scale_color_continuous(guide = F,high = "blue",low = "black")+labs(x="Start year",y="End year") +
+  scale_x_continuous(expand = c(0, 0)) + 
+  scale_y_continuous(expand = c(0, 0)) +
+  theme_bw(base_size = 20,base_family = "serif")+
+  theme(legend.key.height = unit(1,"in"),
+        legend.background = element_blank(),
+        plot.background=element_blank()) 
+p34 <- plot_grid(p3, p4, align = "h", labels = "AUTO", label_size = 20)
+ggsave(filename = "./figures/annualP.wmf", p34, width = 16, height = 8, units = 'in', family = "serif")
+ggsave(filename = "./figures/annualP.eps", p34, width = 16, height = 8, units = 'in', family = "serif", device = cairo_ps)
+ggsave(filename = "./figures/annualP.tiff", p34, width = 16, height = 8, units = 'in', family = "serif", dpi = 500, compression = "lzw+p")
+
+
+summary(lm(data = xjrb.year.dt, SM~Year))
+p5 <- ggplot(xjrb.year.dt, aes(x = Year, y = SM))  +
+  geom_line() + geom_smooth(method = "lm", colour = "red", se = F) +
+  scale_x_continuous(breaks = seq(1970, 2010, by = 5)) +
+  theme_bw(base_size = 20, base_family = "serif") +
+  geom_text(x = 1985, y = 950, label = eqn(1193.21, -0.25, 0.01), parse = T, check_overlap = T, size = 6) +
+  labs(y = expression(paste("Annual soil water storage (mm/yr)"))) 
+p6 <- ggplot(annual.trend.dt[variable == "SM"],aes(x=start,y=end,fill=slope))+geom_tile()+
+  geom_contour(aes(z=abs(trend),colour=..level..),size=1,breaks=c(0,1.96,2.56),lineend = "round") +
+  scale_fill_gradient2(name = "mm/yr\n", low = muted("blue"), high = "red") +
+  scale_color_continuous(guide = F,high = "blue",low = "black")+labs(x="Start year",y="End year") +
+  scale_x_continuous(expand = c(0, 0)) + 
+  scale_y_continuous(expand = c(0, 0)) +
+  theme_bw(base_size = 20,base_family = "serif")+
+  theme(legend.key.height = unit(1,"in"),
+        legend.background = element_blank(),
+        plot.background=element_blank()) 
+p56 <- plot_grid(p5, p6, align = "h", labels = "AUTO", label_size = 20)
+ggsave(filename = "./figures/annualSM.wmf", p56, width = 16, height = 8, units = 'in', family = "serif")
+ggsave(filename = "./figures/annualSM.eps", p56, width = 16, height = 8, units = 'in', family = "serif", device = cairo_ps)
+ggsave(filename = "./figures/annualSM.tiff", p56, width = 16, height = 8, units = 'in', family = "serif", dpi = 500, compression = "lzw+p")
+
+summary(lm(data = xjrb.year.dt, Runoff~Year))
+p7 <- ggplot(xjrb.year.dt, aes(x = Year, y = Runoff))  +
+  geom_line() + geom_smooth(method = "lm", colour = "red", se = F) +
+  scale_x_continuous(breaks = seq(1970, 2010, by = 5)) +
+  theme_bw(base_size = 20, base_family = "serif") +
+  geom_text(x = 1985, y = 1750, label = eqn(-16604.36, 9.91, 0.05), parse = T, check_overlap = T, size = 6) +
+  labs(y = expression(paste("Annual runoff depth (mm/yr)"))) 
+p8 <- ggplot(annual.trend.dt[variable == "Runoff"],aes(x=start,y=end,fill=slope))+geom_tile()+
+  geom_contour(aes(z=abs(trend),colour=..level..),size=1,breaks=c(0,1.96,2.56),lineend = "round") +
+  scale_fill_gradient2(name = "mm/yr\n", low = muted("blue"), high = "red") +
+  scale_color_continuous(guide = F,high = "blue",low = "black")+labs(x="Start year",y="End year") +
+  scale_x_continuous(expand = c(0, 0)) + 
+  scale_y_continuous(expand = c(0, 0)) +
+  theme_bw(base_size = 20,base_family = "serif")+
+  theme(legend.key.height = unit(1,"in"),
+        legend.background = element_blank(),
+        plot.background=element_blank()) 
+p78 <- plot_grid(p7, p8, align = "h", labels = "AUTO", label_size = 20)
+ggsave(filename = "./figures/annualR.wmf", p78, width = 16, height = 8, units = 'in', family = "serif")
+ggsave(filename = "./figures/annualR.eps", p78, width = 16, height = 8, units = 'in', family = "serif", device = cairo_ps)
+ggsave(filename = "./figures/annualR.tiff", p78, width = 16, height = 8, units = 'in', family = "serif", dpi = 500, compression = "lzw+p")
+
+
 
 
   
